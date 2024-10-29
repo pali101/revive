@@ -27,7 +27,7 @@ func (r *ImportsBlocklistRule) configure(arguments lint.Arguments) {
 	if r.blocklist == nil {
 		r.blocklist = make([]*regexp.Regexp, 0)
 
-		// Determine if custom arguments are provided; if not, use the default chaincode blocklist
+		// Determine if custom arguments are provided; if not, use the default chaincode specific blocklist
 		if len(arguments) > 0 {
 			for _, arg := range arguments {
 				argStr, ok := arg.(string)
@@ -71,7 +71,7 @@ func (r *ImportsBlocklistRule) Apply(file *lint.File, arguments lint.Arguments) 
 		if path != nil && r.isBlocklisted(path.Value) {
 			failures = append(failures, lint.Failure{
 				Confidence: 1,
-				Failure:    "should not use the following blocklisted import: " + path.Value,
+				Failure:    fmt.Sprintf("blocklisted import %s used; consider removing it due to policy (e.g., nondeterminism, security risk)", path.Value),
 				Node:       is,
 				Category:   "imports",
 			})
