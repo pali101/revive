@@ -3,6 +3,7 @@ package rule
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/mgechev/revive/lint"
@@ -16,6 +17,9 @@ type ImportsBlocklistRule struct {
 
 var replaceImportRegexp = regexp.MustCompile(`/?\*\*/?`)
 
+// Default blocklist specific to chaincode
+var defaultChaincodeBlocklist = []string{"time", "math/rand", "net", "os"}
+
 func (r *ImportsBlocklistRule) configure(arguments lint.Arguments) {
 	r.Lock()
 	defer r.Unlock()
@@ -23,23 +27,33 @@ func (r *ImportsBlocklistRule) configure(arguments lint.Arguments) {
 	if r.blocklist == nil {
 		r.blocklist = make([]*regexp.Regexp, 0)
 
-		for _, arg := range arguments {
-			argStr, ok := arg.(string)
-			if !ok {
-				panic(fmt.Sprintf("Invalid argument to the imports-blocklist rule. Expecting a string, got %T", arg))
+		// Determine if custom arguments are provided; if not, use the default chaincode blocklist
+		if len(arguments) > 0 {
+			for _, arg := range arguments {
+				argStr, ok := arg.(string)
+				if !ok {
+					panic(fmt.Sprintf("Invalid argument to the imports-blocklist rule. Expecting a string, got %T", arg))
+				}
+				regStr, err := regexp.Compile(fmt.Sprintf(`(?m)"%s"$`, replaceImportRegexp.ReplaceAllString(argStr, `(\W|\w)*`)))
+				if err != nil {
+					panic(fmt.Sprintf("Invalid argument to the imports-blocklist rule. Expecting %q to be a valid regular expression, got: %v", argStr, err))
+				}
+				r.blocklist = append(r.blocklist, regStr)
 			}
-			regStr, err := regexp.Compile(fmt.Sprintf(`(?m)"%s"$`, replaceImportRegexp.ReplaceAllString(argStr, `(\W|\w)*`)))
-			if err != nil {
-				panic(fmt.Sprintf("Invalid argument to the imports-blocklist rule. Expecting %q to be a valid regular expression, got: %v", argStr, err))
+		} else {
+			// No arguments, so add default chaincode blocklist
+			for _, item := range defaultChaincodeBlocklist {
+				regStr := regexp.MustCompile(fmt.Sprintf(`(?m)"%s"$`, replaceImportRegexp.ReplaceAllString(item, `(\W|\w)*`)))
+				r.blocklist = append(r.blocklist, regStr)
 			}
-			r.blocklist = append(r.blocklist, regStr)
 		}
 	}
 }
 
 func (r *ImportsBlocklistRule) isBlocklisted(path string) bool {
 	for _, regex := range r.blocklist {
-		if regex.MatchString(path) {
+		// Skip "fabric" imports even if they match blocklist entries
+		if regex.MatchString(path) && !strings.Contains(path, "fabric") {
 			return true
 		}
 	}
