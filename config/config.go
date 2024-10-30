@@ -97,6 +97,7 @@ var allRules = append([]lint.Rule{
 	&rule.MaxControlNestingRule{},
 	&rule.CommentsDensityRule{},
 	&rule.FileLengthLimitRule{},
+	&rule.GlobalScopeCheckRule{},
 }, defaultRules...)
 
 var allFormatters = []lint.Formatter{
