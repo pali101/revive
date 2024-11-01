@@ -98,6 +98,9 @@ var allRules = append([]lint.Rule{
 	&rule.CommentsDensityRule{},
 	&rule.FileLengthLimitRule{},
 	&rule.GlobalScopeCheckRule{},
+	&rule.RangeOverMapRule{},
+	&rule.CrossChannelInvocation{},
+	&rule.ConcurrencyGoRoutinesRule{},
 }, defaultRules...)
 
 var allFormatters = []lint.Formatter{
