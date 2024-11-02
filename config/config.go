@@ -101,6 +101,7 @@ var allRules = append([]lint.Rule{
 	&rule.RangeOverMapRule{},
 	&rule.CrossChannelInvocation{},
 	&rule.ConcurrencyGoRoutinesRule{},
+	&rule.SystemCommandRule{},
 }, defaultRules...)
 
 var allFormatters = []lint.Formatter{
